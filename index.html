@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatoriGirl</title>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <style>
     body {
@@ -137,7 +138,7 @@
 
   <div class="reward-info">👉 Click on "Reward" to get free pani puri!</div>
 
-  <button class="reward-button" id="reward-btn" onclick="giveReward()">🎉 Reward</button>
+  <button class="reward-button" id="reward-btn">🎉 Reward</button>
 
   <div id="fancy-message"></div>
 
@@ -151,50 +152,41 @@
   </footer>
 
   <script>
+    const SUPABASE_URL = 'https://oakssvcgsgpqydrdpdhn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
     const rewardBtn = document.getElementById('reward-btn');
     const fancyMessage = document.getElementById('fancy-message');
 
-    function giveReward() {
-      if (!token) {
-        fancyMessage.style.display = 'block';
-        fancyMessage.textContent = "⚠️ Invalid QR. Please scan a valid code!";
-        rewardBtn.disabled = true;
+    if (!token) {
+      rewardBtn.disabled = true;
+      fancyMessage.style.display = 'block';
+      fancyMessage.textContent = "⚠️ Invalid QR. No token found!";
+    }
+
+    rewardBtn.addEventListener('click', async () => {
+      rewardBtn.disabled = true;
+      fancyMessage.textContent = "⏳ Checking your reward...";
+      fancyMessage.style.display = 'block';
+
+      const { data, error } = await supabase.rpc('generate_reward', { p_token: token });
+
+      if (error) {
+        fancyMessage.textContent = `⚠️ Error: ${error.message}`;
         return;
       }
 
-      const rewardKey = `reward_${token}`;
-      const savedReward = localStorage.getItem(rewardKey);
-
-      if (savedReward !== null) {
-        showFancyMessage(savedReward);
-        rewardBtn.disabled = true;
+      if (data && data.length > 0) {
+        const reward = data[0].reward;
+        fancyMessage.textContent = `🎉 Waoooo! You got ${reward} pani puri FREE! 🎉`;
       } else {
-        const reward = Math.floor(Math.random() * 9); // 0-8 pani puri
-        localStorage.setItem(rewardKey, reward);
-        showFancyMessage(reward);
-        rewardBtn.disabled = true;
+        fancyMessage.textContent = "❌ Token not valid or something went wrong!";
       }
-    }
-
-    function showFancyMessage(reward) {
-      fancyMessage.textContent = `✨ Waoooo! Congratulations! You got ${reward} pani puri FREE! ✨`;
-      fancyMessage.style.display = 'block';
-    }
-
-    // On load, check if token exists and reward is already claimed
-    if (token) {
-      const rewardKey = `reward_${token}`;
-      const savedReward = localStorage.getItem(rewardKey);
-      if (savedReward !== null) {
-        showFancyMessage(savedReward);
-        rewardBtn.disabled = true;
-      }
-    }
-
-    window.giveReward = giveReward;
+    });
   </script>
 
 </body>
