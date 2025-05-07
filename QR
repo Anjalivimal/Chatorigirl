@@ -131,6 +131,7 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk'
     );
 
+    // Get the token from URL
     const token = new URLSearchParams(window.location.search).get('token');
     const rewardBtn = document.getElementById('reward-btn');
     const fancyMessage = document.getElementById('fancy-message');
@@ -146,6 +147,7 @@
       rewardBtn.textContent = "⏳ Checking...";
 
       try {
+        // Call the Supabase function to generate a reward
         const { data, error } = await supabase
           .rpc('generate_reward', { p_token: token });
 
