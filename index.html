@@ -5,8 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatoriGirl</title>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+
   <style>
-    /* Your existing CSS code here */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fff8e1;
+      color: #333;
+      text-align: center;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ff4081, #7c4dff);
+      color: white;
+      padding: 30px 10px;
+    }
+
+    .curved-title {
+      font-family: 'Pacifico', cursive;
+      font-size: 4rem;
+      background: linear-gradient(45deg, #ffd700, #ff4081);
+      -webkit-background-clip: text;
+      color: transparent;
+      transform: rotate(-3deg);
+      margin-bottom: 0;
+      letter-spacing: 2px;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .welcome {
+      margin: 40px 20px;
+      font-size: 1.5rem;
+      color: #e65100;
+    }
+
+    .usp {
+      background-color: #fff3e0;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 10px;
+      font-weight: bold;
+      color: #bf360c;
+      font-size: 1.3rem;
+      animation: pulse 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    .reward-info {
+      font-size: 1.1rem;
+      color: #d84315;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
+    .reward-button {
+      background: linear-gradient(45deg, #ff6f00, #ff8f00);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      margin-top: 10px;
+    }
+
+    .reward-button:hover:enabled {
+      background: linear-gradient(45deg, #e65100, #ff6f00);
+      transform: scale(1.05);
+    }
+
+    .reward-button:disabled {
+      background-color: gray;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    #fancy-message {
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 80%;
+      background: linear-gradient(45deg, #ffe082, #ffca28);
+      color: #4e342e;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      animation: slideIn 0.6s ease-out forwards;
+      display: none;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .thank-you {
+      background-color: #ffe0b2;
+      padding: 20px;
+      font-size: 1.2rem;
+      margin: 30px 20px;
+      border-radius: 8px;
+      color: #4e342e;
+    }
+
+    footer {
+      background-color: #7c4dff;
+      color: white;
+      padding: 15px;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -37,21 +150,14 @@
     &copy; 2025 ChatoriGirl. All rights reserved.
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // Initialize Supabase client
-    const supabaseUrl = 'YOUR_SUPABASE_URL';
-    const supabaseKey = 'YOUR_SUPABASE_API_KEY';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
     const rewardBtn = document.getElementById('reward-btn');
     const fancyMessage = document.getElementById('fancy-message');
 
-    // Function to handle reward generation
-    async function giveReward() {
+    function giveReward() {
       if (!token) {
         fancyMessage.style.display = 'block';
         fancyMessage.textContent = "⚠️ Invalid QR. Please scan a valid code!";
@@ -66,47 +172,19 @@
         showFancyMessage(savedReward);
         rewardBtn.disabled = true;
       } else {
-        try {
-          // Call Supabase function
-          const { data, error } = await supabase.rpc('generate_reward', { p_token: token });
-
-          // Check if there's an error
-          if (error) {
-            console.error("Error calling Supabase function:", error);
-            fancyMessage.style.display = 'block';
-            fancyMessage.textContent = "⚠️ Something went wrong. Please try again.";
-            rewardBtn.disabled = true;
-            return;
-          }
-
-          console.log("Supabase Response Data:", data); // Debugging the response
-
-          if (data && data.length > 0) {
-            const reward = data[0].reward;
-            localStorage.setItem(rewardKey, reward);
-            showFancyMessage(reward);
-            rewardBtn.disabled = true;
-          } else {
-            fancyMessage.style.display = 'block';
-            fancyMessage.textContent = "⚠️ No reward found for this token.";
-            rewardBtn.disabled = true;
-          }
-        } catch (err) {
-          console.error("Error during Supabase call:", err);
-          fancyMessage.style.display = 'block';
-          fancyMessage.textContent = "⚠️ Something went wrong. Please try again.";
-          rewardBtn.disabled = true;
-        }
+        const reward = Math.floor(Math.random() * 9); // 0-8 pani puri
+        localStorage.setItem(rewardKey, reward);
+        showFancyMessage(reward);
+        rewardBtn.disabled = true;
       }
     }
 
-    // Function to show the fancy message with the reward
     function showFancyMessage(reward) {
       fancyMessage.textContent = `✨ Waoooo! Congratulations! You got ${reward} pani puri FREE! ✨`;
       fancyMessage.style.display = 'block';
     }
 
-    // On page load, check if the reward has already been claimed
+    // On load, check if token exists and reward is already claimed
     if (token) {
       const rewardKey = `reward_${token}`;
       const savedReward = localStorage.getItem(rewardKey);
@@ -115,6 +193,8 @@
         rewardBtn.disabled = true;
       }
     }
+
+    window.giveReward = giveReward;
   </script>
 
 </body>
