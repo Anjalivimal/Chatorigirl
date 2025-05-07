@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatoriGirl</title>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <style>
     body {
@@ -151,40 +150,46 @@
     &copy; 2025 ChatoriGirl. All rights reserved.
   </footer>
 
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = 'https://oakssvcgsgpqydrdpdhn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const supabaseUrl = 'https://YOUR_SUPABASE_URL.supabase.co'; // 🔁 Replace this
+    const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // 🔁 Replace this
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
     const rewardBtn = document.getElementById('reward-btn');
     const fancyMessage = document.getElementById('fancy-message');
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
 
     if (!token) {
-      rewardBtn.disabled = true;
       fancyMessage.style.display = 'block';
-      fancyMessage.textContent = "⚠️ Invalid QR. No token found!";
+      fancyMessage.textContent = "⚠️ Invalid QR. Please scan a valid code!";
+      rewardBtn.disabled = true;
     }
 
-    rewardBtn.addEventListener('click', async () => {
+    rewardBtn.addEventListener("click", async () => {
       rewardBtn.disabled = true;
-      fancyMessage.textContent = "⏳ Checking your reward...";
-      fancyMessage.style.display = 'block';
+      fancyMessage.style.display = "block";
+      fancyMessage.textContent = "⏳ Checking reward...";
 
-      const { data, error } = await supabase.rpc('generate_reward', { p_token: token });
+      try {
+        const { data, error } = await supabaseClient.rpc('generate_reward', { p_token: token });
 
-      if (error) {
-        fancyMessage.textContent = `⚠️ Error: ${error.message}`;
-        return;
-      }
+        console.log("Data:", data);
+        console.log("Error:", error);
 
-      if (data && data.length > 0) {
+        if (error || !data || !data[0]) {
+          fancyMessage.textContent = "❌ Something went wrong. Please try again.";
+          return;
+        }
+
         const reward = data[0].reward;
-        fancyMessage.textContent = `🎉 Waoooo! You got ${reward} pani puri FREE! 🎉`;
-      } else {
-        fancyMessage.textContent = "❌ Token not valid or something went wrong!";
+        fancyMessage.textContent = `🎉 Waoooo! Congratulations! You got ${reward} pani puri FREE! 🎉`;
+
+      } catch (err) {
+        console.error("Caught error:", err);
+        fancyMessage.textContent = "❌ Critical error. Try again later.";
       }
     });
   </script>
