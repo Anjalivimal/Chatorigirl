@@ -135,7 +135,7 @@
     const rewardBtn = document.getElementById('reward-btn');
     const fancyMessage = document.getElementById('fancy-message');
 
-    async function giveReward() {
+    async function handleToken() {
       if (!token) {
         showMessage("⚠️ Invalid QR. Please scan a valid code!");
         rewardBtn.disabled = true;
@@ -146,22 +146,68 @@
       rewardBtn.textContent = "⏳ Checking...";
 
       try {
-        // Call the Supabase function to generate a reward
-        const { data, error } = await 
-          supabase.rpc('generate_reward', { p_token: token });
+        // Step 1: Check if token exists in the database
+        const { data: existingToken, error: tokenError } = await supabase
+          .from('tokens')
+          .select('*')
+          .eq('token', token)
+          .single();
 
-        if (error || !data || data.length === 0) {
-          showMessage("⚠️ Something went wrong. Try again.");
-          console.error(error);
+        if (tokenError && tokenError.code !== 'PGRST116') { // If there's any error other than "no row found"
+          console.error(tokenError);
+          showMessage("⚠️ Something went wrong. Please try again.");
           rewardBtn.textContent = "Try Again";
           rewardBtn.disabled = false;
+          return;
+        }
+
+        if (existingToken) {
+          // Token exists, authenticate it
+          showMessage(`🔐 Token authenticated! Welcome back!`);
+          rewardBtn.textContent = "⏳ Generating Reward...";
+
+          // Call Supabase function to generate a reward
+          const { data, error } = await supabase.rpc('generate_reward', { p_token: token });
+          if (error || !data || data.length === 0) {
+            showMessage("⚠️ Something went wrong with reward generation.");
+            rewardBtn.textContent = "Try Again";
+            rewardBtn.disabled = false;
+          } else {
+            const reward = data.reward;
+            showMessage(`✨ Waoooo! Congratulations! You got ${reward} pani puri FREE! ✨`);
+          }
         } else {
-          const reward = data.reward;
-          showMessage(`✨ Waoooo! Congratulations! You got ${reward} pani puri FREE! ✨`);
+          // Token doesn't exist, insert it
+          const { data: insertData, error: insertError } = await supabase
+            .from('tokens')
+            .insert([{ token: token }]);
+
+          if (insertError) {
+            console.error(insertError);
+            showMessage("⚠️ Failed to insert token. Please try again.");
+            rewardBtn.textContent = "Try Again";
+            rewardBtn.disabled = false;
+          } else {
+            showMessage("✅ Token inserted! Enjoy your first reward!");
+            rewardBtn.textContent = "⏳ Generating Reward...";
+
+            // Call Supabase function to generate reward for new token
+            const { data, error } = await supabase.rpc('generate_reward', { p_token: token });
+            if (error || !data || data.length === 0) {
+              showMessage("⚠️ Something went wrong with reward generation.");
+              rewardBtn.textContent = "Try Again";
+              rewardBtn.disabled = false;
+            } else {
+              const reward = data.reward;
+              showMessage(`✨ Waoooo! Congratulations! You got ${reward} pani puri FREE! ✨`);
+            }
+          }
         }
       } catch (err) {
         console.error(err);
         showMessage("⚠️ Failed to contact server.");
+      } finally {
+        rewardBtn.disabled = false;
       }
     }
 
@@ -170,7 +216,7 @@
       fancyMessage.style.display = 'block';
     }
 
-    rewardBtn.addEventListener('click', giveReward);
+    rewardBtn.addEventListener('click', handleToken);
   </script>
 </body>
 </html>
