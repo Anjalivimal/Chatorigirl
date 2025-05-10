@@ -125,62 +125,91 @@
   <div class="thank-you">🙏 Thank you for visiting our page and scanning the QR!<br/>Enjoy your pani puri and keep coming back for more!</div>
   <footer>&copy; 2025 ChatoriGirl. All rights reserved.</footer>
 
-  <script>
-    // Supabase init (if you need it later)
-    const supabase = window.supabase.createClient(
-      'https://oakssvcgsgpqydrdpdhn.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk'
-    );
+  // Initialize Supabase client
+const supabase = window.supabase.createClient(
+  'https://oakssvcgsgpqydrdpdhn.supabase.co', 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk'
+);
 
-    const token = new URLSearchParams(window.location.search).get('token');
-    const rewardBtn = document.getElementById('reward-btn');
-    const fancyMessage = document.getElementById('fancy-message');
+// Extract token from URL
+const token = new URLSearchParams(window.location.search).get('token');
+const rewardBtn = document.getElementById('reward-btn');
+const fancyMessage = document.getElementById('fancy-message');
 
-    async function handleToken() {
-      if (!token) {
-        showMessage("⚠️ Invalid QR. Please scan a valid code!");
-        rewardBtn.disabled = true;
-        return;
-      }
+async function handleToken() {
+  if (!token) {
+    showMessage("⚠️ Invalid QR. Please scan a valid code!");
+    rewardBtn.disabled = true;
+    return;
+  }
 
+  rewardBtn.disabled = true;
+  rewardBtn.textContent = "⏳ Checking...";
+
+  try {
+    // Step 1: Check if token exists in the database
+    const { data: existingToken, error: tokenError } = await supabase
+      .from('reward_tokens')  // Table name should be 'reward_tokens'
+      .select('*')
+      .eq('token', token)
+      .single();
+
+    if (tokenError) {
+      showMessage("⚠️ Error checking token.");
+      console.error(tokenError);
+      return;
+    }
+
+    if (!existingToken) {
+      showMessage("⚠️ Invalid QR. Please scan a valid code!");
+      return;
+    }
+
+    // Step 2: Insert token into the database if it does not exist
+    const { data, error } = await supabase
+      .from('reward_tokens')  // Table name 'reward_tokens'
+      .insert([
+        { token: token }  // Assuming 'token' is the data you want to insert
+      ]);
+
+    if (error) {
+      showMessage("⚠️ Error inserting token.");
+      console.error("Error inserting token:", error);
+      return;
+    } else {
+      console.log("Token inserted successfully:", data);
+    }
+
+    // Step 3: Call the Edge Function to process the token
+    const response = await fetch('https://oakssvcgsgpqydrdpdhn.supabase.co/functions/v1/smooth-function', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token: token }),
+    });
+
+    const result = await response.json();
+
+    if (result.error) {
+      showMessage(result.error);
+    } else {
+      showMessage(`🎉 You won: ${result.reward}`);
       rewardBtn.disabled = true;
-      rewardBtn.textContent = "⏳ Checking...";
-
-      try {
-        const response = await fetch('https://oakssvcgsgpqydrdpdhn.functions.supabase.co/smooth_function', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ token: token }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || result.error) {
-          showMessage(result.error || "⚠️ Something went wrong.");
-          rewardBtn.textContent = "Try Again";
-          rewardBtn.disabled = false;
-        } else {
-          showMessage(`✨ Waoooo! You got ${result.reward} pani puri FREE! ✨`);
-          rewardBtn.textContent = "🎉 Reward Claimed";
-        }
-
-      } catch (error) {
-        showMessage("⚠️ Something went wrong. Please try again!");
-        console.error(error);
-        rewardBtn.disabled = false;
-        rewardBtn.textContent = "Try Again";
-      }
     }
+  } catch (error) {
+    showMessage("⚠️ Something went wrong. Please try again!");
+    console.error(error);
+  }
+}
 
-    function showMessage(message) {
-      fancyMessage.textContent = message;
-      fancyMessage.style.display = 'block';
-    }
+function showMessage(message) {
+  fancyMessage.textContent = message;
+  fancyMessage.style.display = 'block';
+}
 
-    rewardBtn.addEventListener('click', handleToken);
-  </script>
+rewardBtn.addEventListener('click', handleToken);
+
 
 </body>
 </html>
