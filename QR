@@ -2,13 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ChatoriGirl</title>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    /* Your original CSS unchanged */
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -127,34 +124,26 @@
   <footer>&copy; 2025 ChatoriGirl. All rights reserved.</footer>
 
   <script>
-    // Your deployed edge function URL here
+    // Replace with your actual deployed edge function URL
     const EDGE_FUNCTION_URL = "https://oakssvcgsgpqydrdpdhn.supabase.co/functions/v1/smooth-function";
+// Your Supabase anon key from dashboard - safe to expose in frontend
+   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk";
 
-    // Your Supabase anon key from dashboard - safe to expose in frontend
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ha3NzdmNnc2dwcXlkcmRwZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1NDExMzUsImV4cCI6MjA2MjExNzEzNX0.hM0jVSTXs9TzXfeq2Z-b6IeXIdz68VBTE2aBWrh2RYk";
-
-    const token = new URLSearchParams(window.location.search).get("token");
     const rewardBtn = document.getElementById("reward-btn");
     const fancyMessage = document.getElementById("fancy-message");
 
     async function giveReward() {
-      if (!token) {
-        showMessage("⚠️ Invalid QR. Please scan a valid code!");
-        rewardBtn.disabled = true;
-        return;
-      }
-
       rewardBtn.disabled = true;
       rewardBtn.textContent = "⏳ Checking...";
 
       try {
         const response = await fetch(EDGE_FUNCTION_URL, {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ token }),
+          headers: { "Content-Type": "application/json" ,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`},
+           body: JSON.stringify({ action: "get_reward" })
+         // body: JSON.stringify({})  // No token sent — backend picks one from unique_token table
+         
         });
 
         const result = await response.json();
